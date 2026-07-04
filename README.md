@@ -1,5 +1,8 @@
 # fourchan-local
 
+[![ci](https://github.com/Iljaadam/4chan-local/actions/workflows/ci.yml/badge.svg)](https://github.com/Iljaadam/4chan-local/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/fourchan-local)](https://pypi.org/project/fourchan-local/)
+
 Run your **own local copy of 4chan** on your PC. Pick the boards you want; it mirrors
 them live, gives you a local web UI to browse and full-text search, and lets you
 **pin** threads to keep them forever.
