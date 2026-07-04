@@ -21,6 +21,144 @@ document.addEventListener('click', function (e) {
   }).catch(function () {});
 });
 
+// Click an archived file/thumb -> toggle the full media inline in the current post.
+// Videos use native controls, which include fullscreen in modern browsers.
+document.addEventListener('click', function (e) {
+  const a = e.target.closest('a.mediaToggle[data-media-url]');
+  if (!a) return;
+  e.preventDefault();
+  const file = a.closest('.file') || a.closest('.mediaTile');
+  if (!file) return;
+  const existing = file.querySelector('.mediaInline');
+  if (existing) {
+    existing.remove();
+    file.classList.remove('mediaExpanded');
+    return;
+  }
+  const url = a.dataset.mediaUrl;
+  const kind = a.dataset.mediaKind || 'image';
+  const wrap = document.createElement('div');
+  wrap.className = 'mediaInline';
+  if (kind === 'video') {
+    const v = document.createElement('video');
+    v.controls = true;
+    v.playsInline = true;
+    v.preload = 'metadata';
+    v.src = url;
+    wrap.appendChild(v);
+  } else {
+    const img = document.createElement('img');
+    img.src = url;
+    img.loading = 'eager';
+    img.alt = '';
+    wrap.appendChild(img);
+  }
+  file.classList.add('mediaExpanded');
+  file.appendChild(wrap);
+});
+
+// Media thread view: stable thumbnail grid + one viewing window navigated by
+// buttons or ArrowLeft/ArrowRight. The grid does not resize when media opens.
+(function () {
+  let overlay = null;
+  let items = [];
+  let idx = 0;
+
+  function buildOverlay() {
+    const root = document.createElement('div');
+    root.className = 'mediaViewer';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.innerHTML = [
+      '<div class="mediaViewerChrome">',
+      '  <button type="button" class="mediaViewerClose" title="Close">x</button>',
+      '  <a class="mediaViewerPost" href="#">Post</a>',
+      '  <span class="mediaViewerCount"></span>',
+      '</div>',
+      '<button type="button" class="mediaViewerNav mediaViewerPrev" title="Previous">Prev</button>',
+      '<div class="mediaViewerStage"></div>',
+      '<button type="button" class="mediaViewerNav mediaViewerNext" title="Next">Next</button>'
+    ].join('');
+    document.body.appendChild(root);
+    root.addEventListener('click', function (e) {
+      if (e.target === root || e.target.closest('.mediaViewerClose')) closeViewer();
+      if (e.target.closest('.mediaViewerPrev')) show(idx - 1);
+      if (e.target.closest('.mediaViewerNext')) show(idx + 1);
+    });
+    return root;
+  }
+
+  function show(nextIdx) {
+    if (!items.length) return;
+    idx = (nextIdx + items.length) % items.length;
+    const item = items[idx];
+    const stage = overlay.querySelector('.mediaViewerStage');
+    stage.replaceChildren();
+    if (item.kind === 'video') {
+      const v = document.createElement('video');
+      v.controls = true;
+      v.autoplay = true;
+      v.playsInline = true;
+      v.preload = 'metadata';
+      v.src = item.url;
+      stage.appendChild(v);
+    } else {
+      const img = document.createElement('img');
+      img.src = item.url;
+      img.alt = '';
+      stage.appendChild(img);
+    }
+    overlay.querySelector('.mediaViewerCount').textContent =
+      (idx + 1) + ' / ' + items.length;
+    const post = overlay.querySelector('.mediaViewerPost');
+    post.href = item.postUrl || '#';
+    post.textContent = item.label || 'Post';
+  }
+
+  function openViewer(grid, startLink) {
+    const links = Array.prototype.slice.call(
+      grid.querySelectorAll('a.mediaViewerOpen[data-media-url]')
+    );
+    items = links.map(function (a) {
+      return {
+        url: a.dataset.mediaUrl,
+        kind: a.dataset.mediaKind || 'image',
+        postUrl: a.dataset.postUrl,
+        label: a.dataset.label
+      };
+    });
+    idx = Math.max(0, links.indexOf(startLink));
+    overlay = overlay || buildOverlay();
+    overlay.classList.add('open');
+    document.body.classList.add('mediaViewerActive');
+    show(idx);
+  }
+
+  function closeViewer() {
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    const stage = overlay.querySelector('.mediaViewerStage');
+    if (stage) stage.replaceChildren();
+    document.body.classList.remove('mediaViewerActive');
+  }
+
+  document.addEventListener('click', function (e) {
+    const a = e.target.closest('a.mediaViewerOpen[data-media-url]');
+    if (!a) return;
+    const grid = a.closest('.mediaThreadGrid');
+    if (!grid) return;
+    e.preventDefault();
+    openViewer(grid, a);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (!overlay || !overlay.classList.contains('open')) return;
+    if (e.key === 'Escape') closeViewer();
+    if (e.key === 'ArrowLeft') show(idx - 1);
+    if (e.key === 'ArrowRight') show(idx + 1);
+  });
+})();
+
 // Pin toggle: POST/DELETE /api/pin to keep a target past 4chan's 404 (or release
 // it back to the retention GC). The button's data-kind picks the granularity —
 // thread (data-no), post (data-post), or file (data-md5). Flip UI only on server OK.

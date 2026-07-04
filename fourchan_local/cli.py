@@ -7,7 +7,8 @@
     4cl stop
     4cl status                  # boards, disk used, live vs pinned counts
     4cl gc [--dry-run]
-    4cl config media thumbs|full|off   # per-install media phase
+    4cl config media thumbs|full|all|off   # per-install media phase
+    4cl config poll 10                 # seconds between poll cycles (min 10)
 
 `start` is a subprocess supervisor (roadmap Phase 4 recommendation: least rewrite
 of the existing sync loops). It spawns the poller, the media worker, and uvicorn,
@@ -29,7 +30,9 @@ from fourchan_local import db, retention
 # file BYTES we never download (manifest only). Kept in sync by hand; small list.
 _MEDIA_BLOCKLIST = {"b", "soc", "r", "hc", "gif", "s", "t"}
 
-_MEDIA_PHASES = ("thumbs", "full", "off")
+_MEDIA_PHASES = ("thumbs", "full", "all", "off")
+_MIN_POLL_INTERVAL = 10
+_DEFAULT_POLL_INTERVAL = 10
 
 
 # ---- shared paths ----------------------------------------------------------
@@ -96,6 +99,14 @@ def _apply_blocklist(conn):
         conn.execute("UPDATE boards SET fetch_media = ? WHERE board = ?",
                      (int(b not in bl), b))
     conn.commit()
+
+
+def _poll_interval(conn) -> int:
+    raw = _config_get(conn, "poll_interval", str(_DEFAULT_POLL_INTERVAL))
+    try:
+        return max(_MIN_POLL_INTERVAL, int(raw))
+    except ValueError:
+        return _DEFAULT_POLL_INTERVAL
 
 
 # ---- boards ----------------------------------------------------------------
@@ -182,6 +193,7 @@ def cmd_start(conn, port: int):
             os.remove(pidfile)  # stale pidfile
 
     media_phase = _config_get(conn, "media_phase", "thumbs")
+    poll_interval = _poll_interval(conn)
     os.makedirs(store, exist_ok=True)  # so web's /media StaticFiles mount attaches
     env = _child_env(db_path, store)
 
@@ -204,17 +216,21 @@ def cmd_start(conn, port: int):
     # own built-in default and clobbering it.
     spawn("scraper", [sys.executable, "-m", "fourchan_local.poller"],
           extra_env={"BOARDS": ",".join(boards),
-                     "MEDIA_BLOCKLIST": ",".join(sorted(_blocklist(conn)))})
+                     "MEDIA_BLOCKLIST": ",".join(sorted(_blocklist(conn))),
+                     "POLL_INTERVAL": str(poll_interval)})
     if media_phase != "off":
+        media_env = {"MEDIA_PHASE": media_phase}
+        if media_phase == "all":
+            media_env = {"MEDIA_PHASE": "full", "MEDIA_TYPES": "all"}
         spawn("media", [sys.executable, "-m", "fourchan_local.media"],
-              extra_env={"MEDIA_PHASE": media_phase})
+              extra_env=media_env)
     spawn("web", [sys.executable, "-m", "uvicorn", "fourchan_local.app:app",
                   "--host", "127.0.0.1", "--port", str(port)])
 
     with open(pidfile, "w") as f:
         f.write(str(os.getpid()))
 
-    print(f"[4cl] boards={boards} media={media_phase} "
+    print(f"[4cl] boards={boards} media={media_phase} poll={poll_interval}s "
           f"UI=http://127.0.0.1:{port}", flush=True)
     print("[4cl] Ctrl-C to stop", flush=True)
 
@@ -310,6 +326,7 @@ def cmd_status(conn):
     posts = conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
     filecount = conn.execute("SELECT COUNT(*) FROM files").fetchone()[0]
     media_phase = _config_get(conn, "media_phase", "thumbs")
+    poll_interval = _poll_interval(conn)
 
     pidfile = _pidfile(db_path)
     running = "stopped"
@@ -326,6 +343,7 @@ def cmd_status(conn):
     print(f"status:  {running}")
     print(f"boards:  {', '.join('/'+b+'/' for b in boards) or '(none)'}")
     print(f"media:   {media_phase}")
+    print(f"poll:    {poll_interval}s")
     if media_phase != "off":
         bl = _blocklist(conn)
         print(f"blocked: {' '.join(sorted(bl)) or '(none — all boards fetch bytes)'}")
@@ -355,6 +373,16 @@ def cmd_config_media(conn, phase: str):
     _config_set(conn, "media_phase", phase)
     print(f"media phase = {phase}"
           + (" (media worker won't run)" if phase == "off" else ""))
+    return 0
+
+
+def cmd_config_poll(conn, seconds: int):
+    if seconds < _MIN_POLL_INTERVAL:
+        print(f"poll interval must be at least {_MIN_POLL_INTERVAL}s "
+              "(4chan API rule)", file=sys.stderr)
+        return 1
+    _config_set(conn, "poll_interval", str(seconds))
+    print(f"poll interval = {seconds}s")
     return 0
 
 
@@ -412,9 +440,9 @@ def cmd_init(conn) -> int:
         cmd_boards_add(conn, picked)
 
     print("\n2) Download media?  [1] thumbnails (cheap, default)  "
-          "[2] full images  [3] off (text only)")
+          "[2] full images  [3] full media incl. videos  [4] off (text only)")
     choice = input("   media [1]> ").strip() or "1"
-    phase = {"1": "thumbs", "2": "full", "3": "off"}.get(choice, "thumbs")
+    phase = {"1": "thumbs", "2": "full", "3": "all", "4": "off"}.get(choice, "thumbs")
     _config_set(conn, "media_phase", phase)
     print(f"   media = {phase}")
 
@@ -467,8 +495,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     pc = sub.add_parser("config", help="per-install settings")
     csub = pc.add_subparsers(dest="config_cmd", required=True)
-    pcm = csub.add_parser("media", help="media phase: thumbs|full|off")
+    pcm = csub.add_parser("media", help="media phase: thumbs|full|all|off")
     pcm.add_argument("phase", choices=_MEDIA_PHASES)
+    pcp = csub.add_parser("poll", help="poll interval in seconds, minimum 10")
+    pcp.add_argument("seconds", type=int)
     pcb = csub.add_parser("blocklist", help="show/set boards whose bytes are skipped")
     pcb.add_argument("board", nargs="*", help="new list, or 'none' to clear; empty = show")
     return p
@@ -504,6 +534,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "config":
         if args.config_cmd == "blocklist":
             return cmd_config_blocklist(conn, args.board) or 0
+        if args.config_cmd == "poll":
+            return cmd_config_poll(conn, args.seconds) or 0
         return cmd_config_media(conn, args.phase) or 0
     return 1
 

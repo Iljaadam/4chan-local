@@ -168,6 +168,7 @@ INDEX_REPLIES = 3    # most-recent replies shown per thread on the index
 # Grace window the GC leaves a 404'd-unpinned thread browsable before purge; must
 # match retention.py's PURGE_GRACE so the "purges in Xh" hint matches reality.
 PURGE_GRACE = int(os.environ.get("PURGE_GRACE", "86400"))
+VIDEO_EXTS = {".webm", ".mp4"}
 
 # Board nav appears on every page. Cache the (small, rarely-changing) list so we
 # don't hit the DB per request.
@@ -216,6 +217,9 @@ def attach_media(p: dict) -> dict:
     p["thumb_url"] = thumb_url(p.get("file_md5"), p.get("has_thumb"))
     p["full_url"] = full_url(p.get("file_md5"), p.get("ext"), p.get("storage"))
     p["file_md5_hex"] = _hex(p.get("file_md5"))
+    ext = (p.get("ext") or "").lower()
+    p["media_url"] = p["full_url"] or p["thumb_url"]
+    p["media_kind"] = "video" if p["full_url"] and ext in VIDEO_EXTS else "image"
     return p
 
 
@@ -537,7 +541,8 @@ def catalog(request: Request,
 @app.get("/{board}/thread/{thread_no}", response_class=HTMLResponse)
 def thread(request: Request,
            board: str = Path(pattern=BOARD_PATTERN),
-           thread_no: int = Path(ge=0)):
+           thread_no: int = Path(ge=0),
+           view: str = Query("thread", pattern=r"^(thread|media)$")):
     posts = q(
         f"""
         SELECT {_POST_COLS}
@@ -559,10 +564,14 @@ def thread(request: Request,
             if p["is_op"]:
                 p["purge_hint"] = purge_hint(
                     meta[0]["is_404"], meta[0]["archived_at"], p.get("pinned"))
+    op = next((p for p in posts if p["is_op"]), posts[0] if posts else None)
+    media_posts = [p for p in posts if p.get("media_url")]
     return templates.TemplateResponse(
         "thread.html",
         {"request": request, "board": board, "board_title": board_title(board),
-         "thread_no": thread_no, "posts": posts, "meta": meta[0] if meta else None},
+         "thread_no": thread_no, "posts": posts, "op": op,
+         "media_posts": media_posts, "media_view": view == "media",
+         "meta": meta[0] if meta else None},
     )
 
 
@@ -702,5 +711,3 @@ def del_pin(request: Request, req: PinReq):
     where, params = _pin_target(req)
     w(f"DELETE FROM pins WHERE {where}", params)
     return {"pinned": False}
-
-

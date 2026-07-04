@@ -1,10 +1,11 @@
 {% set turl = "/" ~ board ~ "/thread/" ~ p.thread_no %}
 <div class="postContainer {{ 'opContainer' if p.is_op else 'replyContainer' }}" id="pc{{ p.post_no }}">
   <div id="p{{ p.post_no }}" class="post {{ 'op' if p.is_op else 'reply' }}">
-    {% if p.thumb_url %}
+    {% if p.media_url %}
     <div class="file" id="f{{ p.post_no }}">
       <div class="fileText" id="fT{{ p.post_no }}">File:
-        <a href="{{ p.full_url or p.thumb_url }}" target="_blank" rel="noopener">{{ p.orig_filename or "file" }}</a>
+        <a class="mediaToggle" href="{{ p.media_url }}"
+           data-media-url="{{ p.media_url }}" data-media-kind="{{ p.media_kind }}">{{ p.orig_filename or "file" }}</a>
         {% if p.fsize %}({% if p.fsize >= 1048576 %}{{ (p.fsize/1048576)|round(2) }} MB{% else %}{{ (p.fsize/1024)|round(0)|int }} KB{% endif %}{% if p.width %}, {{ p.width }}x{{ p.height }}{% endif %}){% endif %}
         {% if not preview and p.file_md5_hex %}
         <button type="button" class="pinBtn filePin{% if p.file_pinned %} pinned{% endif %}"
@@ -13,9 +14,13 @@
                 title="{{ 'Unpin file' if p.file_pinned else 'Pin — keep this file past 404' }}">💾</button>
         {% endif %}
       </div>
-      <a class="fileThumb" href="{% if link_thread %}{{ turl }}{% else %}{{ p.full_url or p.thumb_url }}{% endif %}"{% if not link_thread %} target="_blank" rel="noopener"{% endif %}>
+      {% if p.thumb_url %}
+      <a class="fileThumb{% if not link_thread %} mediaToggle{% endif %}"
+         href="{% if link_thread %}{{ turl }}{% else %}{{ p.media_url }}{% endif %}"
+         {% if not link_thread %}data-media-url="{{ p.media_url }}" data-media-kind="{{ p.media_kind }}"{% endif %}>
         <img src="{{ p.thumb_url }}"{% if p.spoiler %} class="spoiler"{% endif %} loading="lazy" alt="">
       </a>
+      {% endif %}
     </div>
     {% elif p.orig_filename %}
     <div class="file"><div class="fileText nofile">File: {{ p.orig_filename }} <span class="abbr">(not archived)</span>

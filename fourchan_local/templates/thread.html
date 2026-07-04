@@ -3,11 +3,43 @@
 {% block boardtitle %}{% set view = 'thread' %}{% include "_boardhead.html" %}{% endblock %}
 {% block body %}
 {% if meta and meta.is_404 %}<div class="abbr center">[archived — 404 on 4chan]</div>{% endif %}
+<div class="navLinks desktop">
+  [<a href="/{{ board }}/thread/{{ thread_no }}"{% if not media_view %} class="cur"{% endif %}>Thread</a>]
+  [<a href="/{{ board }}/thread/{{ thread_no }}?view=media"{% if media_view %} class="cur"{% endif %}>Media</a>]
+</div>
 <div class="board">
   <div class="thread" id="t{{ thread_no }}">
-  {% for p in posts %}
-    {% include "_post.html" %}
-  {% endfor %}
+  {% if media_view %}
+    {% if op %}{% with p = op %}{% include "_post.html" %}{% endwith %}{% endif %}
+    <div class="mediaThreadGrid">
+    {% for p in media_posts %}
+      <div class="mediaTile" id="mp{{ p.post_no }}">
+        <a class="mediaViewerOpen" href="{{ p.media_url }}"
+           data-media-url="{{ p.media_url }}" data-media-kind="{{ p.media_kind }}"
+           data-post-url="/{{ board }}/thread/{{ thread_no }}#p{{ p.post_no }}"
+           data-label="No.{{ p.post_no }}">
+          {% if p.thumb_url %}
+          <img src="{{ p.thumb_url }}"{% if p.spoiler %} class="spoiler"{% endif %} loading="lazy" alt="">
+          {% elif p.media_kind == "image" %}
+          <img src="{{ p.media_url }}"{% if p.spoiler %} class="spoiler"{% endif %} loading="lazy" alt="">
+          {% else %}
+          <span class="mediaNoThumb">{{ p.ext or "video" }}</span>
+          {% endif %}
+        </a>
+        <div class="mediaMeta">
+          <a href="/{{ board }}/thread/{{ thread_no }}#p{{ p.post_no }}">No.{{ p.post_no }}</a>
+          {% if p.fsize %} · {% if p.fsize >= 1048576 %}{{ (p.fsize/1048576)|round(2) }} MB{% else %}{{ (p.fsize/1024)|round(0)|int }} KB{% endif %}{% endif %}
+          {% if p.media_kind == "video" %} · video{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+    {% if not media_posts %}<p>No archived media in this thread yet.</p>{% endif %}
+  {% else %}
+    {% for p in posts %}
+      {% include "_post.html" %}
+    {% endfor %}
+  {% endif %}
   </div>
 </div>
 {% if not posts %}<p>Thread not found.</p>{% endif %}

@@ -4,7 +4,9 @@ Cycle per board:
   1. GET /{board}/threads.json -> {thread_no: last_modified}
   2. For each thread whose last_modified changed (or is new): GET full thread, upsert.
   3. Threads we knew but that vanished from threads.json -> mark is_404 (kept forever).
-Then sleep POLL_INTERVAL and repeat.
+Then sleep POLL_INTERVAL and repeat. 4chan's API rules allow thread updates no
+faster than every 10 seconds and no more than 1 request/second, so both defaults
+stay at those limits.
 """
 import os
 import sys
@@ -20,6 +22,7 @@ from .fourchan import FourChan
 # boards are adult content and are NOT blocked here (loli/shota is banned sitewide).
 # Override via env MEDIA_BLOCKLIST="b,soc,...".
 DEFAULT_BLOCKLIST = {"b", "soc", "r", "hc", "gif", "s", "t"}
+MIN_POLL_INTERVAL = 10
 
 
 def env(name, default):
@@ -40,8 +43,8 @@ def media_blocklist() -> set[str]:
 def main():
     db_path = env("FOURCHAN_DB", "").strip() or db.default_db_path()
     boards_cfg = env("BOARDS", "g,sci").strip()
-    poll_interval = int(env("POLL_INTERVAL", "60"))
-    rps = float(env("REQ_PER_SEC", "1"))
+    poll_interval = max(MIN_POLL_INTERVAL, int(env("POLL_INTERVAL", "10")))
+    rps = min(float(env("REQ_PER_SEC", "1")), 1.0)
     # Retention: purge 404'd-unpinned threads archived longer than this window ago.
     # Large value ~= keep-forever; PURGE_GRACE=0 purges as soon as a thread 404s.
     purge_grace = int(env("PURGE_GRACE", "86400"))

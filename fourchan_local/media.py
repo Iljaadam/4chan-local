@@ -3,7 +3,8 @@ fetch_media on, into a content-addressed store deduplicated by md5.
 
 Phases (env MEDIA_PHASE):
   thumbs  -> grab {tim}s.jpg for every file lacking a thumbnail   (default; cheap)
-  full    -> grab {tim}{ext} for every file whose bytes aren't stored yet
+  full    -> grab {tim}{ext} for every image whose bytes aren't stored yet
+  all     -> grab full bytes for every file type, including webm/mp4 videos
 
 Store layout (on-disk data dir, served read-only by the web app at /media):
   /media/thumb/<ab>/<cd>/<md5hex>.jpg
@@ -113,6 +114,13 @@ def main():
     db_path = env("FOURCHAN_DB", "").strip() or db.default_db_path()
     phase = env("MEDIA_PHASE", "thumbs").strip().lower()
     media_types = env("MEDIA_TYPES", "images").strip().lower()
+    if phase == "all":
+        phase = "full"
+        media_types = "all"
+    if phase not in ("thumbs", "full"):
+        print(f"[media] bad MEDIA_PHASE={phase!r}; use thumbs, full, or all",
+              file=sys.stderr, flush=True)
+        return 1
     rps = float(env("REQ_PER_SEC_MEDIA", "1"))
     batch = int(env("MEDIA_BATCH", "200"))
     idle = int(env("MEDIA_IDLE_SLEEP", "300"))
@@ -133,7 +141,9 @@ def main():
     while True:
         try:
             if phase == "full":
-                n = do_full(api, conn, batch, exts, backoff, max_attempts)
+                n = do_thumbs(api, conn, batch, backoff, max_attempts)
+                if n == 0:
+                    n = do_full(api, conn, batch, exts, backoff, max_attempts)
             else:
                 n = do_thumbs(api, conn, batch, backoff, max_attempts)
         except Exception as e:  # keep worker alive across transient errors
@@ -148,4 +158,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)

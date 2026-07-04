@@ -78,7 +78,8 @@ the same; `pip install fourchan-local` (into a venv) is the non-isolated alterna
 | `4cl stop` | stop a running mirror |
 | `4cl status` | boards, disk used, blocklist, live vs 404'd vs pinned counts |
 | `4cl gc [--dry-run]` | purge 404'd-unpinned threads + orphan media now |
-| `4cl config media thumbs\|full\|off` | per-install media phase |
+| `4cl config media thumbs\|full\|all\|off` | per-install media phase (`full` = images, `all` = images + videos) |
+| `4cl config poll <seconds>` | seconds between poll cycles, minimum 10 |
 | `4cl config blocklist [<b>… \| none]` | show/set boards whose file bytes are skipped |
 
 
@@ -91,7 +92,7 @@ auto-loads a file, so `export` them or prefix a command to use them.
 | Var | Meaning |
 |-----|---------|
 | `FOURCHAN_DB` / `MEDIA_STORE` | override the DB file / media dir (blank = OS data dir) |
-| `POLL_INTERVAL` | seconds between full poll cycles |
+| `POLL_INTERVAL` | seconds between full poll cycles, clamped to minimum 10 |
 | `REQ_PER_SEC` / `REQ_PER_SEC_MEDIA` | API / media-CDN rate caps. Keep ≤ 1 (4chan rule). |
 | `PURGE_GRACE` | seconds a 404'd, unpinned thread stays before GC purges it |
 | `BOARDS`, `MEDIA_PHASE`, `MEDIA_BLOCKLIST` | normally set via `4cl`; env only overrides a manual poller/media run |
@@ -104,10 +105,14 @@ Content-addressed, deduplicated by 4chan-supplied md5:
 
 ```
 /media/thumb/<ab>/<cd>/<md5hex>.jpg     # thumbnails
-/media/full/<ab>/<cd>/<md5hex><ext>     # full files (images phase)
+/media/full/<ab>/<cd>/<md5hex><ext>     # full files (images or all-media phase)
 ```
 
-The app never touches the bytes, only builds URLs from the DB.
+The app never touches the bytes, only builds URLs from the DB. In the thread UI,
+clicking an archived filename or thumbnail expands it in-place; archived `.webm` and
+`.mp4` files play with native browser controls, including fullscreen. Thread pages
+also have a **Media** view (`?view=media`) that keeps the OP visible and replaces
+reply comments with a compact image/video grid.
 
 ### Content blocklist
 
