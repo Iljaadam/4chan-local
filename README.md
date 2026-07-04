@@ -58,6 +58,7 @@ dir (`~/.local/share/fourchan-local/` on Linux).
 
 ```bash
 pipx install fourchan-local   # isolated CLI install; exposes the `4cl` command
+4cl                           # prints a first-run hint if you forget the next step
 4cl init                      # first-run wizard: boards, media phase, blocklist
 4cl start                     # supervise scraper + media + web, UI on :8080
 # browse http://127.0.0.1:8080, Ctrl-C to stop (or `4cl stop` from elsewhere)

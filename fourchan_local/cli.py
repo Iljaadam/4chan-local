@@ -25,7 +25,7 @@ import subprocess
 import sys
 import time
 
-from fourchan_local import db, retention
+from fourchan_local import db
 
 # Same default as poller.DEFAULT_BLOCKLIST: photographic anon-upload boards whose
 # file BYTES we never download (manifest only). Kept in sync by hand; small list.
@@ -397,6 +397,8 @@ def cmd_status(conn):
 # ---- gc / config -----------------------------------------------------------
 
 def cmd_gc(conn, dry_run: bool):
+    from fourchan_local import retention
+
     grace = int(os.environ.get("PURGE_GRACE", "86400"))
     stats = retention.gc_pass(conn, grace, dry_run)
     tag = "would purge" if dry_run else "purged"
@@ -530,7 +532,12 @@ def cmd_init(conn) -> int:
 # ---- arg parsing -----------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="4cl", description="local 4chan mirror + browser")
+    p = argparse.ArgumentParser(
+        prog="4cl",
+        description="local 4chan mirror + browser",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="First run:  4cl init\nThen:       4cl start",
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("init", help="first-run setup wizard (boards, media, blocklist)")
@@ -565,7 +572,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    if argv is None:
+        argv = sys.argv[1:]
+
+    parser = build_parser()
+    if not argv:
+        parser.print_help()
+        return 0
+
+    args = parser.parse_args(argv)
 
     # `start` runs its own long-lived connection; every other command opens one,
     # acts, exits. db.connect applies the schema, so first run bootstraps the file.
