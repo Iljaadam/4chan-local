@@ -1,4 +1,4 @@
-"""4chan-local: installable local-4chan mirror + browser.
+"""fourchan-local: installable local-4chan mirror + browser.
 
 Everything lives in this package: the `4cl` CLI (cli.py) supervises the poller
 (poller.py), media worker (media.py), and web UI (app.py); db.py + retention.py

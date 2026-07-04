@@ -23,7 +23,7 @@ def default_db_path() -> str:
         os.makedirs(os.path.dirname(os.path.abspath(override)), exist_ok=True)
         return override
     import platformdirs
-    d = platformdirs.user_data_dir("4chan-local")
+    d = platformdirs.user_data_dir("fourchan-local")
     os.makedirs(d, exist_ok=True)
     return os.path.join(d, "archive.db")
 
@@ -33,7 +33,7 @@ def default_media_store() -> str:
     if override:
         return override
     import platformdirs
-    return os.path.join(platformdirs.user_data_dir("4chan-local"), "media")
+    return os.path.join(platformdirs.user_data_dir("fourchan-local"), "media")
 
 
 def connect(path: str) -> sqlite3.Connection:

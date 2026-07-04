@@ -1,6 +1,6 @@
 # Publish to PyPI on a GitHub Release, via Trusted Publishing (OIDC) — no API token
 # stored in the repo. One-time setup on PyPI (see README / the notes below) must
-# match: owner Iljaadam, repo 4ch-archive, workflow release.yml, environment pypi.
+# match: owner Iljaadam, repo 4chan-local, workflow release.yml, environment pypi.
 #
 # To cut a release:
 #   1. bump `version` in pyproject.toml, commit, push

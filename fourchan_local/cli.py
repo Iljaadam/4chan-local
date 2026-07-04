@@ -404,7 +404,7 @@ def cmd_init(conn) -> int:
               "`4cl config` instead", file=sys.stderr)
         return 1
 
-    print("4chan-local setup — mirror 4chan boards to this machine.\n")
+    print("fourchan-local setup — mirror 4chan boards to this machine.\n")
 
     print("1) Which boards to mirror? (space-separated codes, e.g. g v pol)")
     picked = input("   boards> ").split()

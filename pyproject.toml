@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "4chan-local"
+name = "fourchan-local"
 version = "1.0.0"
 description = "Mirror 4chan boards to your PC and browse them locally with full-text search."
 readme = "README.md"
@@ -36,9 +36,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Iljaadam/4ch-archive"
-Repository = "https://github.com/Iljaadam/4ch-archive"
-Issues = "https://github.com/Iljaadam/4ch-archive/issues"
+Homepage = "https://github.com/Iljaadam/4chan-local"
+Repository = "https://github.com/Iljaadam/4chan-local"
+Issues = "https://github.com/Iljaadam/4chan-local/issues"
 
 [project.scripts]
 4cl = "fourchan_local.cli:main"

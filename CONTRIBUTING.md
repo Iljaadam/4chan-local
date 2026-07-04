@@ -6,7 +6,7 @@ focused pull requests are welcome.
 ## Dev setup
 
 ```bash
-git clone https://github.com/Iljaadam/4ch-archive && cd 4ch-archive
+git clone https://github.com/Iljaadam/4chan-local && cd 4chan-local
 python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e .
 4cl init          # pick a light board or two for testing

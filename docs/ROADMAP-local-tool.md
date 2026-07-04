@@ -38,7 +38,7 @@ current Postgres = 6.7 GB; SQLite handles single-file DBs into the hundreds of G
 ## Phase 0 — Reframe (cheap, do first)
 
 Rebrand repo from "public archive" to "local tool." No logic change.
-- New name (`4chan-local` / `4cl` working title).
+- New name (`fourchan-local` / `4cl` working title).
 - Rewrite README around the install→pick→browse→pin story.
 - Update `.env.example` comments; kill "public IP / OCI / hardening" framing.
 - **Keep** current Docker files temporarily (fallback until Phase 5 lands).
@@ -78,7 +78,7 @@ dialect lives in ONE place:
   SQLite `progress_handler` can cap runaway queries.
 
 **Data path.** DB + media under an OS-appropriate data dir, e.g.
-`~/.local/share/4chan-local/` (Linux), `%LOCALAPPDATA%` (Win), `~/Library/...`
+`~/.local/share/fourchan-local/` (Linux), `%LOCALAPPDATA%` (Win), `~/Library/...`
 (mac). Use `platformdirs`.
 
 Deliverable: scraper + web run on SQLite, no Docker, against a local file. FTS works.
@@ -181,8 +181,8 @@ video scrubbing — verify `StaticFiles` serves Range requests (it does) for web
 - Restructure into an importable package `fourchan_local/` (scraper, web, cli, db).
 - First-run bootstrap: create data dir, init schema, friendly "pick boards" prompt.
 - Cross-platform smoke test (Linux/mac/Win path handling).
-- Ship: PyPI, or `pipx install 4chan-local` for an isolated CLI install.
-- README quickstart: `pipx install 4chan-local && 4cl boards add g && 4cl start`.
+- Ship: PyPI, or `pipx install fourchan-local` for an isolated CLI install.
+- README quickstart: `pipx install fourchan-local && 4cl boards add g && 4cl start`.
 
 Deliverable: `pip install` → running in 2 commands. Risk: packaging data files,
 Windows path/console quirks.
