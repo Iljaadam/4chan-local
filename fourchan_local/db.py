@@ -237,6 +237,7 @@ def files_needing_full(conn, limit: int, exts: list[str] | None,
                        backoff_secs: int = 0) -> list[tuple]:
     """Distinct files whose full bytes aren't stored yet (storage='none'),
     optionally restricted to `exts` (e.g. images-only). For the images phase.
+    Returns (md5, board, tim, ext, fsize) rows.
 
     `backoff_secs` applies the same 404 grace as files_needing_thumb."""
     cutoff = _now() - backoff_secs
@@ -249,8 +250,9 @@ def files_needing_full(conn, limit: int, exts: list[str] | None,
     params.append(limit)
     cur = conn.execute(
         f"""
-        SELECT md5, board, tim, ext FROM (
+        SELECT md5, board, tim, ext, fsize FROM (
           SELECT f.md5 AS md5, p.board AS board, p.tim AS tim, p.ext AS ext,
+                 f.fsize AS fsize,
                  ROW_NUMBER() OVER (PARTITION BY f.md5 ORDER BY p.is_op DESC) AS rn
           FROM files f
           JOIN posts  p ON p.file_md5 = f.md5

@@ -8,6 +8,7 @@
     4cl status                  # boards, disk used, live vs pinned counts
     4cl gc [--dry-run]
     4cl config media thumbs|full|all|off   # per-install media phase
+    4cl config media-cap 50GB            # max on-disk media store size
     4cl config poll 10                 # seconds between poll cycles (min 10)
 
 `start` is a subprocess supervisor (roadmap Phase 4 recommendation: least rewrite
@@ -109,6 +110,34 @@ def _poll_interval(conn) -> int:
         return _DEFAULT_POLL_INTERVAL
 
 
+def _parse_bytes(raw: str) -> int:
+    raw = (raw or "").strip().lower()
+    if not raw or raw in {"0", "off", "none", "unlimited"}:
+        return 0
+    units = (
+        ("tb", 1024 ** 4), ("t", 1024 ** 4),
+        ("gb", 1024 ** 3), ("g", 1024 ** 3),
+        ("mb", 1024 ** 2), ("m", 1024 ** 2),
+        ("kb", 1024), ("k", 1024),
+        ("b", 1),
+    )
+    for suffix, multiplier in units:
+        if raw.endswith(suffix):
+            number = raw[:-len(suffix)].strip()
+            if not number:
+                raise ValueError(raw)
+            return int(float(number) * multiplier)
+    return int(float(raw))
+
+
+def _media_max_bytes(conn) -> int:
+    raw = _config_get(conn, "media_max_bytes", "0")
+    try:
+        return max(0, _parse_bytes(raw))
+    except ValueError:
+        return 0
+
+
 # ---- boards ----------------------------------------------------------------
 
 def _enabled_boards(conn) -> list[str]:
@@ -193,6 +222,7 @@ def cmd_start(conn, port: int):
             os.remove(pidfile)  # stale pidfile
 
     media_phase = _config_get(conn, "media_phase", "thumbs")
+    media_max = _media_max_bytes(conn)
     poll_interval = _poll_interval(conn)
     os.makedirs(store, exist_ok=True)  # so web's /media StaticFiles mount attaches
     env = _child_env(db_path, store)
@@ -222,6 +252,7 @@ def cmd_start(conn, port: int):
         media_env = {"MEDIA_PHASE": media_phase}
         if media_phase == "all":
             media_env = {"MEDIA_PHASE": "full", "MEDIA_TYPES": "all"}
+        media_env["MEDIA_MAX_BYTES"] = str(media_max)
         spawn("media", [sys.executable, "-m", "fourchan_local.media"],
               extra_env=media_env)
     spawn("web", [sys.executable, "-m", "uvicorn", "fourchan_local.app:app",
@@ -230,8 +261,9 @@ def cmd_start(conn, port: int):
     with open(pidfile, "w") as f:
         f.write(str(os.getpid()))
 
-    print(f"[4cl] boards={boards} media={media_phase} poll={poll_interval}s "
-          f"UI=http://127.0.0.1:{port}", flush=True)
+    cap = _human(media_max) if media_max and media_phase != "off" else "unlimited"
+    print(f"[4cl] boards={boards} media={media_phase} cap={cap} "
+          f"poll={poll_interval}s UI=http://127.0.0.1:{port}", flush=True)
     print("[4cl] Ctrl-C to stop", flush=True)
 
     stopping = {"flag": False}
@@ -326,6 +358,7 @@ def cmd_status(conn):
     posts = conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
     filecount = conn.execute("SELECT COUNT(*) FROM files").fetchone()[0]
     media_phase = _config_get(conn, "media_phase", "thumbs")
+    media_max = _media_max_bytes(conn)
     poll_interval = _poll_interval(conn)
 
     pidfile = _pidfile(db_path)
@@ -343,6 +376,12 @@ def cmd_status(conn):
     print(f"status:  {running}")
     print(f"boards:  {', '.join('/'+b+'/' for b in boards) or '(none)'}")
     print(f"media:   {media_phase}")
+    if media_phase != "off":
+        if media_max:
+            pct = (media_bytes / media_max * 100) if media_max else 0
+            print(f"cap:     {_human(media_bytes)} / {_human(media_max)} ({pct:.0f}%)")
+        else:
+            print("cap:     unlimited")
     print(f"poll:    {poll_interval}s")
     if media_phase != "off":
         bl = _blocklist(conn)
@@ -373,6 +412,25 @@ def cmd_config_media(conn, phase: str):
     _config_set(conn, "media_phase", phase)
     print(f"media phase = {phase}"
           + (" (media worker won't run)" if phase == "off" else ""))
+    return 0
+
+
+def cmd_config_media_cap(conn, value: str | None):
+    if value is None:
+        cap = _media_max_bytes(conn)
+        print(f"media cap = {_human(cap) if cap else 'unlimited'}")
+        return 0
+    try:
+        cap = _parse_bytes(value)
+    except ValueError:
+        print("media cap must be a byte size like 500MB/20GB, or off", file=sys.stderr)
+        return 1
+    if cap <= 0:
+        _config_set(conn, "media_max_bytes", "0")
+        print("media cap = unlimited")
+        return 0
+    _config_set(conn, "media_max_bytes", str(cap))
+    print(f"media cap = {_human(cap)}")
     return 0
 
 
@@ -497,6 +555,8 @@ def build_parser() -> argparse.ArgumentParser:
     csub = pc.add_subparsers(dest="config_cmd", required=True)
     pcm = csub.add_parser("media", help="media phase: thumbs|full|all|off")
     pcm.add_argument("phase", choices=_MEDIA_PHASES)
+    pcc = csub.add_parser("media-cap", help="show/set max media store size")
+    pcc.add_argument("value", nargs="?", help="size like 20GB, or off/unlimited")
     pcp = csub.add_parser("poll", help="poll interval in seconds, minimum 10")
     pcp.add_argument("seconds", type=int)
     pcb = csub.add_parser("blocklist", help="show/set boards whose bytes are skipped")
@@ -536,6 +596,8 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_config_blocklist(conn, args.board) or 0
         if args.config_cmd == "poll":
             return cmd_config_poll(conn, args.seconds) or 0
+        if args.config_cmd == "media-cap":
+            return cmd_config_media_cap(conn, args.value) or 0
         return cmd_config_media(conn, args.phase) or 0
     return 1
 

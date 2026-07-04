@@ -79,6 +79,7 @@ the same; `pip install fourchan-local` (into a venv) is the non-isolated alterna
 | `4cl status` | boards, disk used, blocklist, live vs 404'd vs pinned counts |
 | `4cl gc [--dry-run]` | purge 404'd-unpinned threads + orphan media now |
 | `4cl config media thumbs\|full\|all\|off` | per-install media phase (`full` = images, `all` = images + videos) |
+| `4cl config media-cap 20GB\|off` | cap the on-disk media store, or clear the cap |
 | `4cl config poll <seconds>` | seconds between poll cycles, minimum 10 |
 | `4cl config blocklist [<b>… \| none]` | show/set boards whose file bytes are skipped |
 
@@ -94,6 +95,7 @@ auto-loads a file, so `export` them or prefix a command to use them.
 | `FOURCHAN_DB` / `MEDIA_STORE` | override the DB file / media dir (blank = OS data dir) |
 | `POLL_INTERVAL` | seconds between full poll cycles, clamped to minimum 10 |
 | `REQ_PER_SEC` / `REQ_PER_SEC_MEDIA` | API / media-CDN rate caps. Keep ≤ 1 (4chan rule). |
+| `MEDIA_MAX_BYTES` | optional media-store cap for manual media-worker runs (`20GB`, bytes, or `off`) |
 | `PURGE_GRACE` | seconds a 404'd, unpinned thread stays before GC purges it |
 | `BOARDS`, `MEDIA_PHASE`, `MEDIA_BLOCKLIST` | normally set via `4cl`; env only overrides a manual poller/media run |
 
@@ -113,6 +115,12 @@ clicking an archived filename or thumbnail expands it in-place; archived `.webm`
 `.mp4` files play with native browser controls, including fullscreen. Thread pages
 also have a **Media** view (`?view=media`) that keeps the OP visible and replaces
 reply comments with a compact image/video grid.
+
+Use `4cl config media-cap <size>` to put a hard budget on the media store, for
+example `4cl config media-cap 50GB`. When the store reaches the cap, the media
+worker stops downloading new bytes and waits for GC to free space or for you to
+raise/clear the cap with `4cl config media-cap off`. Already pinned media is not
+deleted to satisfy the cap; normal retention rules still decide what can be purged.
 
 ### Content blocklist
 
