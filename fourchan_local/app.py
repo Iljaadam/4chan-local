@@ -169,6 +169,7 @@ INDEX_REPLIES = 3    # most-recent replies shown per thread on the index
 # match retention.py's PURGE_GRACE so the "purges in Xh" hint matches reality.
 PURGE_GRACE = int(os.environ.get("PURGE_GRACE", "86400"))
 VIDEO_EXTS = {".webm", ".mp4"}
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif"}
 
 # Board nav appears on every page. Cache the (small, rarely-changing) list so we
 # don't hit the DB per request.
@@ -321,6 +322,90 @@ def fmt_time(epoch) -> str:
 
 def _in_clause(seq) -> str:
     return ",".join("?" for _ in seq)
+
+
+def _media_phase() -> str:
+    rows = q("SELECT value FROM config WHERE key = 'media_phase'")
+    phase = (rows[0]["value"] if rows else "thumbs").strip().lower()
+    return phase if phase in ("thumbs", "full", "all", "off") else "thumbs"
+
+
+def _media_progress_counts(full_all_types: bool) -> dict:
+    ext_filter = ""
+    params: tuple = ()
+    if not full_all_types:
+        ext_filter = f"AND ext IN ({_in_clause(IMAGE_EXTS)})"
+        params = tuple(IMAGE_EXTS)
+    rows = q(
+        f"""
+        WITH eligible AS (
+            SELECT f.md5, f.has_thumb, f.storage, f.ext
+            FROM files f
+            JOIN posts p ON p.file_md5 = f.md5
+            JOIN boards b ON b.board = p.board AND b.fetch_media = 1
+            WHERE p.tim IS NOT NULL
+              AND f.storage <> 'purged_before_fetch'
+            GROUP BY f.md5
+        )
+        SELECT
+            count(*) AS thumb_total,
+            coalesce(sum(CASE WHEN has_thumb = 1 THEN 1 ELSE 0 END), 0) AS thumb_done,
+            coalesce(sum(CASE WHEN 1 = 1 {ext_filter}
+                              THEN 1 ELSE 0 END), 0) AS full_total,
+            coalesce(sum(CASE WHEN 1 = 1 {ext_filter}
+                               AND storage IN ('hot', 'cold')
+                              THEN 1 ELSE 0 END), 0) AS full_done
+        FROM eligible
+        """,
+        params * 2,
+    )
+    return rows[0] if rows else {
+        "thumb_total": 0, "thumb_done": 0, "full_total": 0, "full_done": 0,
+    }
+
+
+@app.get("/api/media-progress")
+def media_progress():
+    """Small read-only status endpoint for the home-page progress meter.
+
+    The media worker first fills thumbnails, then full files in `full`/`all` mode,
+    so the UI counts those as separate tasks. It reports DB state only; it does not
+    need direct coordination with the worker process.
+    """
+    phase = _media_phase()
+    if phase == "off":
+        return {
+            "enabled": False, "phase": "off", "done": 0, "total": 0,
+            "pending": 0, "percent": 0, "detail": "Media downloads are off",
+        }
+
+    counts = _media_progress_counts(full_all_types=(phase == "all"))
+    thumb_done = int(counts["thumb_done"] or 0)
+    thumb_total = int(counts["thumb_total"] or 0)
+    full_done = int(counts["full_done"] or 0)
+    full_total = int(counts["full_total"] or 0)
+
+    if phase == "thumbs":
+        done, total = thumb_done, thumb_total
+        detail = f"{done} / {total} thumbnails"
+    else:
+        done, total = thumb_done + full_done, thumb_total + full_total
+        full_label = "files" if phase == "all" else "image files"
+        detail = (
+            f"{thumb_done} / {thumb_total} thumbnails, "
+            f"{full_done} / {full_total} {full_label}"
+        )
+    pending = max(total - done, 0)
+    percent = round((done / total) * 100, 1) if total else 0
+    return {
+        "enabled": True,
+        "phase": phase,
+        "done": done,
+        "total": total,
+        "pending": pending,
+        "percent": percent,
+        "detail": detail if total else "No media queued",
+    }
 
 
 @app.get("/", response_class=HTMLResponse)

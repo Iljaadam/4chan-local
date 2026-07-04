@@ -16,6 +16,21 @@ blockquote.postMessage{ white-space:pre-wrap; word-wrap:break-word; }
 .navLinks.desktop{ text-align:center; font-size:9pt; margin-bottom:4px; }
 .navLinks.desktop .cur{ font-weight:bold; }
 
+/* home-page media progress */
+.mediaProgress{ width:min(420px, calc(100vw - 24px)); margin:4px auto 8px;
+                color:#c5c8c6; font-size:11px; line-height:1.35; }
+.mediaProgress[hidden]{ display:none; }
+.mediaProgressTop{ display:flex; justify-content:space-between; gap:12px; margin-bottom:2px; }
+.mediaProgressTitle{ font-weight:bold; color:#b5bd68; }
+.mediaProgressPct{ color:#81a2be; font-variant-numeric:tabular-nums; }
+.mediaProgressTrack{ height:8px; background:#1d1f21; border:1px solid #555;
+                     box-sizing:border-box; overflow:hidden; }
+.mediaProgressFill{ width:0; height:100%; background:#5f89ac; transition:width 160ms linear; }
+.mediaProgressDetail{ color:#707070; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mediaProgressComplete .mediaProgressFill{ background:#789922; }
+.mediaProgressOff .mediaProgressTitle{ color:#707070; }
+.mediaProgressOff .mediaProgressFill{ background:#555; }
+
 /* catalog control bar (4chan-style sort + filter) */
 #catalogControls{ text-align:center; margin:4px 0; font-size:10pt; }
 #catalogControls .cataban{ margin-left:10px; }

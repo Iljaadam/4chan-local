@@ -204,6 +204,42 @@ document.addEventListener('click', function (e) {
   });
 });
 
+// Home-page media progress. The shell exists only on /, so other pages do not poll.
+(function () {
+  const root = document.getElementById('mediaProgress');
+  if (!root) return;
+
+  const fill = root.querySelector('.mediaProgressFill');
+  const pct = root.querySelector('.mediaProgressPct');
+  const detail = root.querySelector('.mediaProgressDetail');
+  const track = root.querySelector('.mediaProgressTrack');
+
+  function render(data) {
+    const percent = Math.max(0, Math.min(100, Number(data.percent) || 0));
+    const rounded = percent === 100 ? '100' : percent.toFixed(percent % 1 ? 1 : 0);
+    fill.style.width = percent + '%';
+    pct.textContent = rounded + '%';
+    detail.textContent = data.detail || 'No media queued';
+    track.setAttribute('aria-valuenow', String(Math.round(percent)));
+    root.classList.toggle('mediaProgressComplete', data.enabled && data.total > 0 && data.pending === 0);
+    root.classList.toggle('mediaProgressOff', !data.enabled);
+    root.hidden = false;
+  }
+
+  function refresh() {
+    fetch('/api/media-progress', { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('progress failed');
+      return r.json();
+    }).then(render).catch(function () {
+      detail.textContent = 'Media progress unavailable';
+      root.hidden = false;
+    });
+  }
+
+  refresh();
+  window.setInterval(refresh, 5000);
+})();
+
 // Catalog: client-side sort + filter of the already-rendered thread cards,
 // mirroring 4chan's catalog controls. Only runs on the catalog page.
 (function () {

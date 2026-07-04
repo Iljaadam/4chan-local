@@ -4,6 +4,17 @@
 <div class="boardBanner"><div class="boardTitle">4ch-archive</div></div>
 {% endblock %}
 {% block body %}
+<div id="mediaProgress" class="mediaProgress" hidden aria-live="polite">
+  <div class="mediaProgressTop">
+    <span class="mediaProgressTitle">Media downloads</span>
+    <span class="mediaProgressPct">0%</span>
+  </div>
+  <div class="mediaProgressTrack" role="progressbar" aria-label="Media download progress"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="mediaProgressFill"></div>
+  </div>
+  <div class="mediaProgressDetail">Checking media queue...</div>
+</div>
 <table>
   <tr><td class="postblock">Board</td><td class="postblock">Threads</td><td class="postblock">Posts</td></tr>
   {% for b in boards %}
