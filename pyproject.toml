@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fourchan-local"
-version = "1.1.0"
+version = "1.1.2"
 description = "Mirror 4chan boards to your PC and browse them locally."
 readme = "README.md"
 requires-python = ">=3.10"
