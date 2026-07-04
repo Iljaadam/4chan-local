@@ -1,0 +1,62 @@
+{% set turl = "/" ~ board ~ "/thread/" ~ p.thread_no %}
+<div class="postContainer {{ 'opContainer' if p.is_op else 'replyContainer' }}" id="pc{{ p.post_no }}">
+  <div id="p{{ p.post_no }}" class="post {{ 'op' if p.is_op else 'reply' }}">
+    {% if p.thumb_url %}
+    <div class="file" id="f{{ p.post_no }}">
+      <div class="fileText" id="fT{{ p.post_no }}">File:
+        <a href="{{ p.full_url or p.thumb_url }}" target="_blank" rel="noopener">{{ p.orig_filename or "file" }}</a>
+        {% if p.fsize %}({% if p.fsize >= 1048576 %}{{ (p.fsize/1048576)|round(2) }} MB{% else %}{{ (p.fsize/1024)|round(0)|int }} KB{% endif %}{% if p.width %}, {{ p.width }}x{{ p.height }}{% endif %}){% endif %}
+        {% if not preview and p.file_md5_hex %}
+        <button type="button" class="pinBtn filePin{% if p.file_pinned %} pinned{% endif %}"
+                data-kind="file" data-md5="{{ p.file_md5_hex }}"
+                aria-pressed="{{ 'true' if p.file_pinned else 'false' }}"
+                title="{{ 'Unpin file' if p.file_pinned else 'Pin — keep this file past 404' }}">💾</button>
+        {% endif %}
+      </div>
+      <a class="fileThumb" href="{% if link_thread %}{{ turl }}{% else %}{{ p.full_url or p.thumb_url }}{% endif %}"{% if not link_thread %} target="_blank" rel="noopener"{% endif %}>
+        <img src="{{ p.thumb_url }}"{% if p.spoiler %} class="spoiler"{% endif %} loading="lazy" alt="">
+      </a>
+    </div>
+    {% elif p.orig_filename %}
+    <div class="file"><div class="fileText nofile">File: {{ p.orig_filename }} <span class="abbr">(not archived)</span>
+      {% if not preview and p.file_md5_hex %}
+      <button type="button" class="pinBtn filePin{% if p.file_pinned %} pinned{% endif %}"
+              data-kind="file" data-md5="{{ p.file_md5_hex }}"
+              aria-pressed="{{ 'true' if p.file_pinned else 'false' }}"
+              title="{{ 'Unpin file' if p.file_pinned else 'Pin — keep this file past 404' }}">💾</button>
+      {% endif %}
+    </div></div>
+    {% endif %}
+
+    <div class="postInfo desktop" id="pi{{ p.post_no }}">
+      <span class="nameBlock">
+        {% if p.subject %}{% if link_thread %}<a class="subject" href="{{ turl }}">{{ p.subject }}</a>{% else %}<span class="subject">{{ p.subject }}</span>{% endif %} {% endif %}
+        <span class="name">{{ p.name or "Anonymous" }}</span>{% if p.trip %} <span class="postertrip">{{ p.trip }}</span>{% endif %}
+        {% if p.capcode %} <strong class="capcode">## {{ p.capcode }}</strong>{% endif %}
+        {% if p.country %} <span class="countryFlag">{{ p.country }}</span>{% endif %}
+      </span>
+      <span class="dateTime postNum">{{ p.post_time }}
+        <a href="{{ turl }}#p{{ p.post_no }}" title="Link to this post">No.</a><a href="{{ turl }}#p{{ p.post_no }}">{{ p.post_no }}</a>{% if preview %} ↗{% endif %}
+      </span>
+      {% if p.is_op and not preview %}
+      <button type="button" class="pinBtn{% if p.pinned %} pinned{% endif %}"
+              data-kind="thread" data-board="{{ board }}" data-no="{{ p.thread_no }}"
+              aria-pressed="{{ 'true' if p.pinned else 'false' }}"
+              title="{{ 'Unpin (allow GC to purge on 404)' if p.pinned else 'Pin — keep this thread past 4chan 404' }}">📌</button>
+      {% if p.purge_hint %}<span class="purgeHint" title="404'd on 4chan; pin to keep">{{ p.purge_hint }}</span>{% endif %}
+      {% endif %}
+      {% if not preview %}
+      <button type="button" class="pinBtn postPin{% if p.post_pinned %} pinned{% endif %}"
+              data-kind="post" data-board="{{ board }}" data-post="{{ p.post_no }}"
+              aria-pressed="{{ 'true' if p.post_pinned else 'false' }}"
+              title="{{ 'Unpin post' if p.post_pinned else 'Pin — keep this post past 404' }}">📍</button>
+      {% endif %}
+      {% if p.deleted %} <span class="abbr">[deleted]</span>{% endif %}
+      {% if p.backlinks %}
+      <div class="backlink"><span>Replied by:</span> {% for n in p.backlinks %}<a class="quotelink" href="#p{{ n }}" data-board="{{ board }}" data-no="{{ n }}">&gt;&gt;{{ n }}</a> {% endfor %}</div>
+      {% endif %}
+    </div>
+
+    <blockquote class="postMessage" id="m{{ p.post_no }}">{{ p.html }}</blockquote>
+  </div>
+</div>

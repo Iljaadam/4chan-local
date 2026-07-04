@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}4ch-archive{% endblock %}</title>
+  <link rel="stylesheet" href="/static/4chan.css">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="tomorrow is_thread">
+  {% macro boardlist() %}<span class="boardList">[{% for b in nav_boards() %}<a href="/{{ b.board }}"{% if b.title %} title="{{ b.title }}"{% endif %}>{{ b.board }}</a>{% if not loop.last %} / {% endif %}{% endfor %}]</span>{% endmacro %}
+
+  <div class="boardNav desktop" id="boardNavDesktop">
+    {{ boardlist() }}
+    <span id="navtopright">
+      <form class="search" action="/search/" method="get">
+        [<input id="search-box" type="text" name="q" placeholder="search…" value="{{ query|default('') }}"><input type="hidden" name="board" value="{{ board|default('') }}">]
+      </form>
+      [<a href="/search/?board={{ board|default('') }}" title="Search">Search</a>]
+      [<a href="/pins" title="Pinned threads">Pins</a>]
+      [<a href="/" title="Home">Home</a>]
+    </span>
+  </div>
+
+  {% block boardtitle %}{% endblock %}
+
+  {% block body %}{% endblock %}
+
+  <div class="boardNav desktop" id="boardNavDesktopFoot">
+    {{ boardlist() }}
+    <span id="navbotright">[<a href="#" title="Top">Top</a>]</span>
+  </div>
+  <div class="absbot"><div class="boardNavDesktopFoot"></div></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

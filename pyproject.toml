@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fourchan-local"
+version = "0.6.0"
+description = "Mirror 4chan boards to your PC and browse them locally with full-text search."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ilja Adamenko" }]
+keywords = ["4chan", "archive", "mirror", "scraper", "sqlite", "full-text-search", "self-hosted"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: System :: Archiving",
+]
+dependencies = [
+    "httpx==0.27.2",
+    "platformdirs==4.3.6",
+    "fastapi==0.115.5",
+    "uvicorn[standard]==0.32.1",
+    "jinja2==3.1.4",
+    "markupsafe>=2.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/Iljaadam/4ch-archive"
+Repository = "https://github.com/Iljaadam/4ch-archive"
+Issues = "https://github.com/Iljaadam/4ch-archive/issues"
+
+[project.scripts]
+4cl = "fourchan_local.cli:main"
+
+# The whole app lives in fourchan_local/ (Phase 6). Ship the schema, Jinja
+# templates, and static assets as package data so a plain wheel install runs with
+# no source tree present.
+[tool.setuptools]
+packages = ["fourchan_local"]
+
+[tool.setuptools.package-data]
+fourchan_local = ["schema.sqlite.sql", "templates/*.html", "static/*"]

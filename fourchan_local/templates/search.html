@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}search: {{ query }} — 4ch-archive{% endblock %}
+{% block boardtitle %}
+<div class="boardBanner"><div class="boardTitle">Search</div></div>
+{% endblock %}
+{% block body %}
+<div class="searchpage">
+<form class="search" action="/search/" method="get">
+  <input id="search-box" type="text" name="q" value="{{ query }}">
+  <input type="text" name="board" value="{{ board }}" placeholder="board" size="6">
+  <input type="submit" value="Search">
+</form>
+{% if query %}
+  <div class="navLinks">{{ results|length }} result(s){% if board %} in /{{ board }}/{% endif %}</div>
+  <div class="board">
+  {% for r in results %}
+  <div class="searchresult">
+    <div class="postInfo">
+      <span class="nameBlock">{% if r.subject %}<span class="subject">{{ r.subject }}</span> {% endif %}</span>
+      <span class="dateTime postNum">{{ r.post_time }}
+        <a href="/{{ r.board }}/thread/{{ r.thread_no }}#p{{ r.post_no }}">/{{ r.board }}/ No.{{ r.post_no }}</a>
+      </span>
+    </div>
+    <blockquote class="postMessage">{{ r.snippet }}</blockquote>
+  </div>
+  {% endfor %}
+  {% if not results %}<p>No matches.</p>{% endif %}
+  </div>
+  <div class="pagelist"><div class="pages">
+    {% if page > 1 %}<a href="/search/?q={{ query }}&board={{ board }}&page={{ page-1 }}">Previous</a> {% endif %}
+    {% if results|length == 50 %}<a href="/search/?q={{ query }}&board={{ board }}&page={{ page+1 }}">Next</a>{% endif %}
+  </div></div>
+{% endif %}
+</div>
+{% endblock %}

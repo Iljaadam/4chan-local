@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}/{{ board }}/ {{ thread_no }} — 4ch-archive{% endblock %}
+{% block boardtitle %}{% set view = 'thread' %}{% include "_boardhead.html" %}{% endblock %}
+{% block body %}
+{% if meta and meta.is_404 %}<div class="abbr center">[archived — 404 on 4chan]</div>{% endif %}
+<div class="board">
+  <div class="thread" id="t{{ thread_no }}">
+  {% for p in posts %}
+    {% include "_post.html" %}
+  {% endfor %}
+  </div>
+</div>
+{% if not posts %}<p>Thread not found.</p>{% endif %}
+{% endblock %}

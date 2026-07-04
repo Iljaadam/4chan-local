@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}/{{ board }}/ catalog — 4ch-archive{% endblock %}
+{% block boardtitle %}{% set view = 'catalog' %}{% include "_boardhead.html" %}{% endblock %}
+{% block body %}
+<div id="catalogControls">
+  Sort:
+  <select id="catalogSort">
+    <option value="bump">Bump order</option>
+    <option value="replies">Reply count</option>
+    <option value="images">Image count</option>
+    <option value="age">Creation date</option>
+  </select>
+  <span class="cataban">Search:</span>
+  <input id="catalogFilter" type="text" placeholder="filter…" autocomplete="off">
+</div>
+<div class="catalog" id="threads">
+{% for t in threads %}
+<div class="threadcardwrap"
+     data-replies="{{ t.reply_count or 0 }}" data-images="{{ t.image_count or 0 }}"
+     data-age="{{ t.thread_no }}"
+     data-text="{{ ((t.subject or '') ~ ' ' ~ (t.op_text or ''))|lower }}">
+  <button type="button" class="pinBtn{% if t.pinned %} pinned{% endif %}"
+          data-board="{{ board }}" data-no="{{ t.thread_no }}"
+          aria-pressed="{{ 'true' if t.pinned else 'false' }}"
+          title="{{ 'Unpin' if t.pinned else 'Pin — keep past 404' }}">📌</button>
+  <a class="threadcard" href="/{{ board }}/thread/{{ t.thread_no }}">
+    {% if t.thumb_url %}<img class="cthumb" src="{{ t.thumb_url }}" loading="lazy" alt="">{% endif %}
+    <span class="cstat">R:{{ t.reply_count }} / I:{{ t.image_count }}{% if t.is_404 %} [404]{% endif %}</span>
+    {% if t.purge_hint %}<span class="purgeHint">{{ t.purge_hint }}</span>{% endif %}
+    {% if t.subject %}<span class="subject">{{ t.subject }}</span>{% endif %}
+    <span class="ctext">{{ (t.op_text or "")[:220] }}{% if t.op_text and t.op_text|length > 220 %}…{% endif %}</span>
+  </a>
+</div>
+{% endfor %}
+</div>
+{% if not threads %}<p>No threads yet.</p>{% endif %}
+<a name="bottom"></a>
+<div class="pagelist desktop">
+  <div class="pages">
+    {% if page > 1 %}<a href="/{{ board }}/catalog?page={{ page-1 }}">Previous</a>{% endif %}
+    {% set has_next = threads|length == 50 %}
+    {% for n in range([1, page-3]|max, page + (2 if has_next else 1)) %}
+      {% if n == page %}[<strong>{{ n }}</strong>]{% else %}[<a href="/{{ board }}/catalog?page={{ n }}">{{ n }}</a>]{% endif %}
+    {% endfor %}
+    {% if has_next %}<a href="/{{ board }}/catalog?page={{ page+1 }}">Next</a>{% endif %}
+  </div>
+  <div class="pages cataloglink"><a href="/{{ board }}">Index</a></div>
+</div>
+{% endblock %}

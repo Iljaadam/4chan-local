@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}/{{ board }}/ — 4ch-archive{% endblock %}
+{% block boardtitle %}{% set view = 'index' %}{% include "_boardhead.html" %}{% endblock %}
+{% block body %}
+<div class="board">
+{% for t in threads %}
+  <div class="thread" id="t{{ t.thread_no }}">
+    {% if t.op %}{% with p = t.op, link_thread = True %}{% include "_post.html" %}{% endwith %}{% endif %}
+    {% if t.omitted > 0 %}<span class="summary">{{ t.omitted }} repl{{ 'y' if t.omitted == 1 else 'ies' }} omitted. <a href="/{{ board }}/thread/{{ t.thread_no }}">Click here</a> to view.</span>{% endif %}
+    {% for p in t.replies %}{% include "_post.html" %}{% endfor %}
+  </div>
+  <hr>
+{% endfor %}
+</div>
+{% if not threads %}<p>No threads yet.</p>{% endif %}
+{% set has_next = threads|length == 10 %}
+<a name="bottom"></a>
+<div class="pagelist desktop">
+  <div class="pages">
+    {% if page > 1 %}<a href="/{{ board }}?page={{ page-1 }}">Previous</a>{% endif %}
+    {% for n in range([1, page-3]|max, page + (2 if has_next else 1)) %}
+      {% if n == page %}[<strong>{{ n }}</strong>]{% else %}[<a href="/{{ board }}?page={{ n }}">{{ n }}</a>]{% endif %}
+    {% endfor %}
+    {% if has_next %}<a href="/{{ board }}?page={{ page+1 }}">Next</a>{% endif %}
+  </div>
+  <div class="pages cataloglink"><a href="/{{ board }}/catalog">Catalog</a></div>
+</div>
+{% endblock %}

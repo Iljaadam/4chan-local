@@ -1,0 +1,10 @@
+<hr>
+<div class="boardBanner">
+  <div class="boardTitle">/{{ board }}/{% if board_title %} - {{ board_title }}{% endif %}</div>
+</div>
+<hr class="abovePostForm">
+<div class="navLinks desktop">
+  [<a href="/{{ board }}"{% if view == 'index' %} class="cur"{% endif %}>Index</a>]
+  [<a href="/{{ board }}/catalog"{% if view == 'catalog' %} class="cur"{% endif %}>Catalog</a>]
+  [<a href="#bottom">Bottom</a>]
+</div>

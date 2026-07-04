@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}4ch-archive{% endblock %}
+{% block boardtitle %}
+<div class="boardBanner"><div class="boardTitle">4ch-archive</div></div>
+{% endblock %}
+{% block body %}
+<table>
+  <tr><td class="postblock">Board</td><td class="postblock">Threads</td><td class="postblock">Posts</td></tr>
+  {% for b in boards %}
+  <tr>
+    <td><a href="/{{ b.board }}">/{{ b.board }}/</a> {{ b.title or "" }}</td>
+    <td align="right">{{ b.threads }}</td>
+    <td align="right">{{ b.posts }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% if not boards %}<p>No boards yet. Scraper still warming up.</p>{% endif %}
+{% endblock %}

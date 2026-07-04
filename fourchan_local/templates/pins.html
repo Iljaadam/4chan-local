@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Pinned — 4ch-archive{% endblock %}
+{% block boardtitle %}
+<div class="boardBanner"><div class="boardTitle">📌 Pinned</div></div>
+{% endblock %}
+{% block body %}
+<p class="pinIntro">Pinned targets are kept forever — they survive 4chan's 404 and
+the retention GC never purges them or their bytes. 📌 a whole thread, 📍 a single
+post (its thread is kept as a shell to hold it), or 💾 a file's bytes.</p>
+
+{% if not threads and not posts and not files %}
+<p>Nothing pinned yet. Hit 📌 / 📍 / 💾 anywhere to keep something.</p>
+{% endif %}
+
+{% if threads %}
+<h2 class="pinSection">📌 Threads</h2>
+<div class="catalog">
+{% for t in threads %}
+<div class="threadcardwrap">
+  <button type="button" class="pinBtn pinned" data-kind="thread"
+          data-board="{{ t.board }}" data-no="{{ t.thread_no }}"
+          aria-pressed="true" title="Unpin thread">📌</button>
+  <a class="threadcard" href="/{{ t.board }}/thread/{{ t.thread_no }}">
+    {% if t.thumb_url %}<img class="cthumb" src="{{ t.thumb_url }}" loading="lazy" alt="">{% endif %}
+    <span class="cstat">/{{ t.board }}/ · R:{{ t.reply_count or 0 }} / I:{{ t.image_count or 0 }}
+      {% if t.is_404 %}<span class="pinKept">kept past 404</span>{% endif %}</span>
+    <span class="purgeHint">pinned {{ t.pinned_at_fmt }}</span>
+    {% if t.subject %}<span class="subject">{{ t.subject }}</span>{% endif %}
+    <span class="ctext">{{ (t.op_text or "")[:220] }}{% if t.op_text and t.op_text|length > 220 %}…{% endif %}</span>
+  </a>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if posts %}
+<h2 class="pinSection">📍 Posts</h2>
+<div class="catalog">
+{% for p in posts %}
+<div class="threadcardwrap">
+  <button type="button" class="pinBtn pinned" data-kind="post"
+          data-board="{{ p.board }}" data-post="{{ p.post_no }}"
+          aria-pressed="true" title="Unpin post">📍</button>
+  <a class="threadcard" href="/{{ p.board }}/thread/{{ p.thread_no }}#p{{ p.post_no }}">
+    {% if p.thumb_url %}<img class="cthumb" src="{{ p.thumb_url }}" loading="lazy" alt="">{% endif %}
+    <span class="cstat">/{{ p.board }}/ · No.{{ p.post_no }}{% if p.is_op %} (OP){% endif %}
+      {% if p.is_404 %}<span class="pinKept">kept past 404</span>{% endif %}</span>
+    <span class="purgeHint">pinned {{ p.pinned_at_fmt }}</span>
+    <span class="ctext">{{ (p.op_text or "")[:220] }}{% if p.op_text and p.op_text|length > 220 %}…{% endif %}</span>
+  </a>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if files %}
+<h2 class="pinSection">💾 Files</h2>
+<div class="catalog">
+{% for f in files %}
+<div class="threadcardwrap">
+  <button type="button" class="pinBtn pinned" data-kind="file"
+          data-md5="{{ f.file_md5_hex }}" aria-pressed="true" title="Unpin file">💾</button>
+  <a class="threadcard" href="{% if f.ref %}/{{ f.ref.board }}/thread/{{ f.ref.thread_no }}#p{{ f.ref.post_no }}{% else %}{{ f.full_url or f.thumb_url or '#' }}{% endif %}">
+    {% if f.thumb_url %}<img class="cthumb" src="{{ f.thumb_url }}" loading="lazy" alt="">{% endif %}
+    <span class="cstat">{{ f.ext or "file" }}{% if f.fsize %} · {% if f.fsize >= 1048576 %}{{ (f.fsize/1048576)|round(2) }} MB{% else %}{{ (f.fsize/1024)|round(0)|int }} KB{% endif %}{% endif %}</span>
+    <span class="purgeHint">pinned {{ f.pinned_at_fmt }}</span>
+    <span class="ctext">md5 {{ f.file_md5_hex[:16] }}…</span>
+  </a>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

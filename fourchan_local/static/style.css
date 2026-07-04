@@ -1,0 +1,63 @@
+/* Supplement on top of the real 4chan tomorrow.css (4chan.css). Only the bits
+   4chan's own JS/markup would otherwise provide, plus our custom views. */
+
+/* our comments use \n (4chan uses <br>); keep wrapping + whitespace */
+blockquote.postMessage{ white-space:pre-wrap; word-wrap:break-word; }
+
+/* top + bottom board nav */
+#boardNavDesktop{ padding:2px 5px; }
+#boardNavDesktopFoot{ padding:2px 5px; clear:both; }
+#navtopright, #navbotright{ float:right; }
+.search{ display:inline; }
+#search-box{ width:120px; }
+
+/* board banner / sub-nav (the [Index] [Catalog] [Bottom] button row) */
+.boardBanner{ margin:4px 0; }
+.navLinks.desktop{ text-align:center; font-size:9pt; margin-bottom:4px; }
+.navLinks.desktop .cur{ font-weight:bold; }
+
+/* catalog control bar (4chan-style sort + filter) */
+#catalogControls{ text-align:center; margin:4px 0; font-size:10pt; }
+#catalogControls .cataban{ margin-left:10px; }
+#catalogFilter{ width:160px; }
+
+/* image spoilers (we blur the real thumb instead of a placeholder) */
+img.spoiler{ filter:blur(16px); }
+img.spoiler:hover{ filter:none; }
+.fileText.nofile{ color:#707070; font-style:italic; }
+
+/* inline quote preview (click a quotelink) */
+.qpreview{ display:block; margin:2px 0 2px 20px; }
+.qpreview .postContainer{ background:#282a2e; border:1px solid #333; padding:2px; display:table; }
+.post.missing{ color:#a00; padding:4px; }
+
+/* catalog grid (4chan's real catalog is a separate JS app; this is ours) */
+.catalog{ display:flex; flex-wrap:wrap; gap:5px; align-items:flex-start; padding:5px; }
+.threadcard{ display:block; width:170px; max-height:320px; overflow:hidden;
+             background:#282a2e; border:1px solid #111; padding:4px;
+             font-size:11px; color:#c5c8c6 !important; }
+.threadcard:hover{ outline:1px solid #5f89ac; }
+.threadcard .cthumb{ display:block; max-width:160px; max-height:160px;
+                     margin:0 auto 3px; border:1px solid #c5c8c6; }
+.threadcard .cstat{ display:block; color:#707070; }
+.threadcard .subject{ display:block; }
+.threadcard .ctext{ display:block; white-space:normal; word-wrap:break-word; }
+
+/* pin toggle + retention hints */
+.pinBtn{ background:none; border:0; cursor:pointer; padding:0 2px; font-size:12px;
+         line-height:1; filter:grayscale(1) opacity(0.45); vertical-align:middle; }
+.pinBtn:hover{ filter:grayscale(0.3) opacity(0.9); }
+.pinBtn.pinned{ filter:none; }
+.pinBtn.pinerr{ outline:1px solid #a00; }
+.purgeHint{ color:#c07a2a; font-size:10px; margin-left:4px; white-space:nowrap; }
+.pinKept{ color:#3a7a3a; }
+.pinIntro{ color:#707070; font-size:11px; margin:4px 8px; }
+.pinSection{ font-size:13px; margin:12px 8px 4px; border-bottom:1px solid #33393f; }
+/* catalog cards get a relative wrapper so the pin button can overlay the corner */
+.threadcardwrap{ position:relative; }
+.threadcardwrap .pinBtn{ position:absolute; top:2px; right:2px; z-index:2;
+                         font-size:14px; padding:1px 3px; background:rgba(0,0,0,0.35); }
+
+/* search results reuse post styling; give each a little separation */
+.searchresult{ margin:4px 0; padding:2px; background:#282a2e; border:1px solid #282a2e; display:table; }
+mark{ background:#5a5320; color:#fff; }
