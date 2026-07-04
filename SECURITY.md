@@ -1,6 +1,6 @@
 # Security policy
 
-`fourchan-local` is a single-user tool that runs on `localhost`. The web UI binds to
+`4chan-local` is a single-user tool that runs on `localhost`. The web UI binds to
 `127.0.0.1` only and the write (pin) endpoints reject non-loopback clients, so there
 is no intended remote attack surface. Don't expose it to a network; it isn't hardened
 or authenticated for that.

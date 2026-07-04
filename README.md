@@ -1,4 +1,4 @@
-# fourchan-local
+# 4chan-local
 
 Run your **own local copy of 4chan** on your PC. Pick the boards you want; it mirrors
 them live, gives you a local web UI to browse and full-text search, and lets you
@@ -51,10 +51,10 @@ Docker, no Postgres, no nginx.
 ## Run (local CLI — `4cl`)
 
 The `4cl` CLI drives the whole thing. It stores the DB + media under your OS data
-dir (`~/.local/share/fourchan-local/` on Linux).
+dir (`~/.local/share/4chan-local/` on Linux).
 
 ```bash
-pipx install fourchan-local   # isolated CLI install; exposes the `4cl` command
+pipx install 4chan-local   # isolated CLI install; exposes the `4cl` command
 4cl init                      # first-run wizard: boards, media phase, blocklist
 4cl start                     # supervise scraper + media + web, UI on :8080
 # browse http://127.0.0.1:8080, Ctrl-C to stop (or `4cl stop` from elsewhere)
@@ -63,7 +63,7 @@ pipx install fourchan-local   # isolated CLI install; exposes the `4cl` command
 `4cl init` walks you through picking boards, the media phase, and reviewing the
 media-bytes **blocklist** (see below). `4cl start` on a fresh install runs the same
 wizard automatically. For local hacking, `pip install -e .` from a checkout works
-the same; `pip install fourchan-local` (into a venv) is the non-isolated alternative.
+the same; `pip install 4chan-local` (into a venv) is the non-isolated alternative.
 
 | Command | Does |
 |---------|------|
@@ -132,7 +132,7 @@ pip install -e .
 ```
 
 Python ≥ 3.10, cross-platform (data lives under your OS data dir). A PyPI release
-(`pipx install fourchan-local`) is planned.
+(`pipx install 4chan-local`) is planned.
 
 ## Contributing
 

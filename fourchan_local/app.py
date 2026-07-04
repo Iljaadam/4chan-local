@@ -138,7 +138,7 @@ def _default_db_path() -> str:
     if override:
         return override
     import platformdirs
-    return os.path.join(platformdirs.user_data_dir("fourchan-local"), "archive.db")
+    return os.path.join(platformdirs.user_data_dir("4chan-local"), "archive.db")
 
 
 DB_PATH = _default_db_path()
@@ -157,7 +157,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(_PKG_DIR, "static")),
           name="static")
 # App serves /media directly from the content-addressed store on disk.
 MEDIA_STORE = os.environ.get("MEDIA_STORE", "").strip() or os.path.join(
-    __import__("platformdirs").user_data_dir("fourchan-local"), "media")
+    __import__("platformdirs").user_data_dir("4chan-local"), "media")
 if os.path.isdir(MEDIA_STORE):
     app.mount("/media", StaticFiles(directory=MEDIA_STORE), name="media")
 templates = Jinja2Templates(directory=os.path.join(_PKG_DIR, "templates"))
