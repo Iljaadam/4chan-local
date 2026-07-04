@@ -139,8 +139,8 @@ git clone https://github.com/Iljaadam/4chan-local && cd 4chan-local
 pip install -e .
 ```
 
-Python ≥ 3.10, cross-platform (data lives under your OS data dir). A PyPI release
-(`pipx install fourchan-local`) is planned.
+Python ≥ 3.10, cross-platform (data lives under your OS data dir). For the PyPI
+package, use `pipx install fourchan-local`.
 
 ## Contributing
 
