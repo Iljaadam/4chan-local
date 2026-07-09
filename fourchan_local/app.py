@@ -473,7 +473,8 @@ def enrich_posts(posts: list[dict], board: str, thread_no: int) -> list[dict]:
 
 
 @app.get("/pins", response_class=HTMLResponse)
-def pins_view(request: Request):
+def pins_view(request: Request,
+              view: str = Query("all", pattern=r"^(all|media)$")):
     """Everything the user has pinned, newest pin first, grouped by kind (thread /
     post / file). Each is kept forever — a 404'd origin is badged so its permanence
     is clear. Declared before /{board} so the literal path wins over the wildcard."""
@@ -533,7 +534,8 @@ def pins_view(request: Request):
 
     return templates.TemplateResponse(
         "pins.html",
-        {"request": request, "threads": threads, "posts": posts, "files": files},
+        {"request": request, "threads": threads, "posts": posts, "files": files,
+         "pins_view": view},
     )
 
 

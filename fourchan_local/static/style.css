@@ -46,7 +46,7 @@ img.spoiler:hover{ filter:none; }
 .mediaInline video{ background:#000; }
 .mediaThreadGrid{ clear:both; display:grid; grid-template-columns:repeat(auto-fill, 170px);
                   gap:6px; align-items:start; padding:6px 0; }
-.mediaTile{ width:170px; min-height:190px; background:#282a2e; border:1px solid #111;
+.mediaTile{ position:relative; width:170px; min-height:190px; background:#282a2e; border:1px solid #111;
             padding:4px; overflow:hidden; box-sizing:border-box; }
 .mediaTile > a.mediaViewerOpen{ display:flex; align-items:center; justify-content:center;
                                 width:160px; height:160px; margin:0 auto 3px; }
@@ -72,6 +72,9 @@ body.mediaViewerActive{ overflow:hidden; }
 .mediaViewerClose{ width:24px; height:24px; line-height:20px; }
 .mediaViewerPost{ color:#81a2be; }
 .mediaViewerCount{ color:#707070; }
+.mediaViewerPin{ margin-left:auto; font-size:16px; }
+.mediaTilePin{ position:absolute; top:6px; right:6px; z-index:2;
+               font-size:15px; padding:2px 3px; background:rgba(0,0,0,0.45); }
 .mediaViewerNav{ position:fixed; top:50%; transform:translateY(-50%); min-width:54px;
                  height:42px; z-index:10001; }
 .mediaViewerPrev{ left:12px; }

@@ -4,6 +4,48 @@
 <div class="boardBanner"><div class="boardTitle">📌 Pinned</div></div>
 {% endblock %}
 {% block body %}
+{% set media_only = pins_view == 'media' %}
+<div class="navLinks desktop">
+  [<a href="/pins"{% if not media_only %} class="cur"{% endif %}>All Pins</a>]
+  [<a href="/pins?view=media"{% if media_only %} class="cur"{% endif %}>Pinned Media</a>]
+</div>
+
+{% if media_only %}
+{% if files %}
+<div class="mediaThreadGrid">
+{% for f in files %}
+  <div class="mediaTile" id="pf{{ f.file_md5_hex }}">
+    {% if f.media_url %}
+    <a class="mediaViewerOpen" href="{{ f.media_url }}"
+       data-media-url="{{ f.media_url }}" data-media-kind="{{ f.media_kind }}"
+       data-md5="{{ f.file_md5_hex }}" data-pinned="1"
+       data-post-url="{% if f.ref %}/{{ f.ref.board }}/thread/{{ f.ref.thread_no }}#p{{ f.ref.post_no }}{% else %}{{ f.full_url or f.thumb_url or '#' }}{% endif %}"
+       data-label="{% if f.ref %}/{{ f.ref.board }}/ No.{{ f.ref.post_no }}{% else %}{{ f.ext or 'file' }}{% endif %}">
+      {% if f.thumb_url %}
+      <img src="{{ f.thumb_url }}" loading="lazy" alt="">
+      {% elif f.media_kind == "image" and f.media_url %}
+      <img src="{{ f.media_url }}" loading="lazy" alt="">
+      {% else %}
+      <span class="mediaNoThumb">{{ f.ext or "file" }}</span>
+      {% endif %}
+    </a>
+    {% else %}
+    <div class="mediaNoThumb">{{ f.ext or "file" }}</div>
+    {% endif %}
+    <div class="mediaMeta">
+      {% if f.ref %}<a href="/{{ f.ref.board }}/thread/{{ f.ref.thread_no }}#p{{ f.ref.post_no }}">/{{ f.ref.board }}/ No.{{ f.ref.post_no }}</a>{% else %}{{ f.ext or "file" }}{% endif %}
+      {% if f.fsize %} · {% if f.fsize >= 1048576 %}{{ (f.fsize/1048576)|round(2) }} MB{% else %}{{ (f.fsize/1024)|round(0)|int }} KB{% endif %}{% endif %}
+    </div>
+    <button type="button" class="pinBtn mediaTilePin pinned"
+            data-kind="file" data-md5="{{ f.file_md5_hex }}"
+            aria-pressed="true" title="Unpin media">💾</button>
+  </div>
+{% endfor %}
+</div>
+{% else %}
+<p>No pinned media yet. Use 💾 in the media viewer to pin media.</p>
+{% endif %}
+{% else %}
 <p class="pinIntro">Pinned targets are kept forever — they survive 4chan's 404 and
 the retention GC never purges them or their bytes. 📌 a whole thread, 📍 a single
 post (its thread is kept as a shell to hold it), or 💾 a file's bytes.</p>
@@ -69,5 +111,6 @@ post (its thread is kept as a shell to hold it), or 💾 a file's bytes.</p>
 </div>
 {% endfor %}
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

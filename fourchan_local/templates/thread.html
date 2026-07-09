@@ -16,6 +16,7 @@
       <div class="mediaTile" id="mp{{ p.post_no }}">
         <a class="mediaViewerOpen" href="{{ p.media_url }}"
            data-media-url="{{ p.media_url }}" data-media-kind="{{ p.media_kind }}"
+           data-md5="{{ p.file_md5_hex }}" data-pinned="{{ 1 if p.file_pinned else 0 }}"
            data-post-url="/{{ board }}/thread/{{ thread_no }}#p{{ p.post_no }}"
            data-label="No.{{ p.post_no }}">
           {% if p.thumb_url %}
@@ -31,6 +32,12 @@
           {% if p.fsize %} · {% if p.fsize >= 1048576 %}{{ (p.fsize/1048576)|round(2) }} MB{% else %}{{ (p.fsize/1024)|round(0)|int }} KB{% endif %}{% endif %}
           {% if p.media_kind == "video" %} · video{% endif %}
         </div>
+        {% if p.file_md5_hex %}
+        <button type="button" class="pinBtn mediaTilePin{% if p.file_pinned %} pinned{% endif %}"
+                data-kind="file" data-md5="{{ p.file_md5_hex }}"
+                aria-pressed="{{ 'true' if p.file_pinned else 'false' }}"
+                title="{{ 'Unpin media' if p.file_pinned else 'Pin media' }}">💾</button>
+        {% endif %}
       </div>
     {% endfor %}
     </div>

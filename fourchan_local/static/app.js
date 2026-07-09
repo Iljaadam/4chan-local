@@ -57,6 +57,34 @@ document.addEventListener('click', function (e) {
   file.appendChild(wrap);
 });
 
+const PIN_TITLES = {
+  thread: ['Pin — keep this thread past 404', 'Unpin thread'],
+  post: ['Pin — keep this post past 404', 'Unpin post'],
+  file: ['Pin media', 'Unpin media'],
+};
+
+function setPinButtonState(btn, pinned) {
+  const kind = btn.dataset.kind || 'thread';
+  btn.classList.toggle('pinned', pinned);
+  btn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+  const t = PIN_TITLES[kind] || PIN_TITLES.thread;
+  btn.title = pinned ? t[1] : t[0];
+}
+
+function syncFilePinButtons(md5, pinned) {
+  if (!md5) return;
+  document.querySelectorAll('.pinBtn[data-kind="file"][data-md5="' + md5 + '"]').forEach(function (btn) {
+    setPinButtonState(btn, pinned);
+  });
+  document.querySelectorAll('.mediaViewerOpen[data-md5="' + md5 + '"]').forEach(function (a) {
+    a.dataset.pinned = pinned ? '1' : '0';
+  });
+}
+
+function isFilePinned(md5) {
+  return !!document.querySelector('.pinBtn[data-kind="file"][data-md5="' + md5 + '"].pinned');
+}
+
 // Media thread view: stable thumbnail grid + one viewing window navigated by
 // buttons or ArrowLeft/ArrowRight. The grid does not resize when media opens.
 (function () {
@@ -74,6 +102,7 @@ document.addEventListener('click', function (e) {
       '  <button type="button" class="mediaViewerClose" title="Close">x</button>',
       '  <a class="mediaViewerPost" href="#">Post</a>',
       '  <span class="mediaViewerCount"></span>',
+      '  <button type="button" class="pinBtn mediaViewerPin" data-kind="file" aria-pressed="false" title="Pin media">💾</button>',
       '</div>',
       '<button type="button" class="mediaViewerNav mediaViewerPrev" title="Previous">Prev</button>',
       '<div class="mediaViewerStage"></div>',
@@ -113,6 +142,18 @@ document.addEventListener('click', function (e) {
     const post = overlay.querySelector('.mediaViewerPost');
     post.href = item.postUrl || '#';
     post.textContent = item.label || 'Post';
+    const pin = overlay.querySelector('.mediaViewerPin');
+    if (item.md5) {
+      pin.hidden = false;
+      pin.disabled = false;
+      pin.dataset.md5 = item.md5;
+      setPinButtonState(pin, isFilePinned(item.md5));
+    } else {
+      pin.hidden = true;
+      pin.disabled = true;
+      delete pin.dataset.md5;
+      setPinButtonState(pin, false);
+    }
   }
 
   function openViewer(grid, startLink) {
@@ -123,6 +164,8 @@ document.addEventListener('click', function (e) {
       return {
         url: a.dataset.mediaUrl,
         kind: a.dataset.mediaKind || 'image',
+        md5: a.dataset.md5,
+        pinned: a.dataset.pinned === '1',
         postUrl: a.dataset.postUrl,
         label: a.dataset.label
       };
@@ -162,11 +205,6 @@ document.addEventListener('click', function (e) {
 // Pin toggle: POST/DELETE /api/pin to keep a target past 4chan's 404 (or release
 // it back to the retention GC). The button's data-kind picks the granularity —
 // thread (data-no), post (data-post), or file (data-md5). Flip UI only on server OK.
-const PIN_TITLES = {
-  thread: ['Pin — keep this thread past 404', 'Unpin thread'],
-  post: ['Pin — keep this post past 404', 'Unpin post'],
-  file: ['Pin — keep this file past 404', 'Unpin file'],
-};
 document.addEventListener('click', function (e) {
   const btn = e.target.closest('.pinBtn');
   if (!btn) return;
@@ -193,10 +231,8 @@ document.addEventListener('click', function (e) {
     if (!r.ok) throw new Error('pin failed');
     return r.json();
   }).then(function (d) {
-    btn.classList.toggle('pinned', d.pinned);
-    btn.setAttribute('aria-pressed', d.pinned ? 'true' : 'false');
-    const t = PIN_TITLES[kind] || PIN_TITLES.thread;
-    btn.title = d.pinned ? t[1] : t[0];
+    setPinButtonState(btn, d.pinned);
+    if (kind === 'file') syncFilePinButtons(btn.dataset.md5, d.pinned);
   }).catch(function () {
     btn.classList.add('pinerr');
   }).finally(function () {
