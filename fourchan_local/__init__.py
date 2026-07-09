@@ -5,4 +5,4 @@ Everything lives in this package: the `4cl` CLI (cli.py) supervises the poller
 back them with a single SQLite file, and schema/templates/static ship as package
 data so a plain wheel install runs with no source tree present.
 """
-__version__ = "1.0.0"
+__version__ = "1.2.1"
